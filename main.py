@@ -1,5 +1,8 @@
 import discord
 
+with open('token.txt') as f:
+    token = f.read()
+
 client = discord.Client()
 
 @client.event
@@ -20,5 +23,5 @@ async def on_message(message):
             if msg[2] == "mean":
                 await message.channel.send("18.18")
 
-client.run('OTAyMzYzNjUwNTU0MjIwNTU2.YXdVow.xdV0N5EkoFhQLvb6rZ_ReMbHo5g')
+client.run(token)
 
