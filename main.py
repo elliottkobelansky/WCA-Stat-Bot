@@ -1,4 +1,6 @@
 import discord
+import searchfunctions
+
 
 with open('token.txt') as f:
     token = f.read()
@@ -17,11 +19,14 @@ async def on_message(message):
     msg = message.content.split(" ")
 
     if message.content.startswith('!wca'):
-        if msg[1] == "wr":
-            if msg[2] == "single":
-                await message.channel.send("15.27")
-            if msg[2] == "mean":
-                await message.channel.send("18.18")
+        # Always be case insensitive
+        if msg[1].lower() == "wr":
+            # Tried to throw in some shorthands
+            if msg[3].lower() in ["single", "sg"]:
+                # Look at searchfunctions.py to see what this does
+                await message.channel.send(searchfunctions.wrsingle(msg))
+            elif msg[3].lower() in ["average", "mean", "avg", "mn"]:
+                await message.channel.send(searchfunctions.wraverage(msg))
+
 
 client.run(token)
-
