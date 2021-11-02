@@ -1,12 +1,35 @@
 import pandas as pd
 import re
 import numpy as np
+import time
 
 dfsingles = pd.read_csv("3bld_stats/RanksSingle.csv")
 singlesdata = dfsingles[["personId", "best"]].values
 dfaverages = pd.read_csv("3bld_stats/RanksAverage.csv")
 averagesdata = dfaverages[["personId", "best"]].values
 
+
+def timeformat(solvetime):
+    """ Takes xx.xx format and adjusts it
+        to xx:xx.xx if necessary
+    """
+    solvetime = float(solvetime)
+    # Do nothing if number is less than one minute
+    if float(solvetime) < 60.00:
+        return(solvetime)
+
+    # Format m:s.ms if more than a minute
+    if float(solvetime) >= 60.00:
+        # Miliseconds
+        solvetime_ms = int(round(solvetime - int(solvetime), 2) * 100)
+        # Seconds (without ms)
+        solvetime_s = int(solvetime) % 60
+        # Add leading 0 if seconds bad
+        if solvetime_s < 10:
+            solvetime_s = f"0{solvetime_s}"
+        # Minutes
+        solvetime_m = int(int(solvetime) / 60)
+        return(f"{solvetime_m}:{solvetime_s}.{solvetime_ms}")
 
 def wrsingle(message):
     """ Prints the single with a certain world ranking
@@ -15,7 +38,7 @@ def wrsingle(message):
     # Gets WCA ID (NEED TO CHANGE THIS TO NAME)
     name = singlesdata[rank][0]
     # Need to format this better. Should get time in xx:xx.xx format
-    time = '{0:.2f}'.format(int(singlesdata[rank][1]) / 100.0)
+    time = timeformat('{0:.2f}'.format(int(singlesdata[rank][1]) / 100.0))
     # Print out in nice fashion
     return(f"**WR{rank + 1} Single: {time} by {name}**")
 
@@ -26,15 +49,7 @@ def wraverage(message):
     # Gets WCA ID (NEED TO CHANGE THIS TO NAME)
     name = averagesdata[rank][0]
     # Need to format this better. Should get time in xx:xx.xx format
-    time = '{0:.2f}'.format(int(averagesdata[rank][1]) / 100.0)
+    time = timeformat('{0:.2f}'.format(int(averagesdata[rank][1]) / 100.0))
     # Print out in nice fashion
     return(f"**WR{rank + 1} Average: {time} by {name}**")
 
-def timeformat(time):
-    """ Takes xx.xx format and adjusts it
-        to xx:xx.xx if necessary
-    """
-    if time < 60:
-        pass
-    if time > 60:
-        pass

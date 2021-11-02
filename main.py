@@ -1,5 +1,6 @@
 import discord
-import searchfunctions
+import searchfunctions as sf
+import keep_alive
 
 
 with open('token.txt') as f:
@@ -24,9 +25,9 @@ async def on_message(message):
             # Tried to throw in some shorthands
             if msg[3].lower() in ["single", "sg"]:
                 # Look at searchfunctions.py to see what this does
-                await message.channel.send(searchfunctions.wrsingle(msg))
+                await message.channel.send(sf.wrsingle(msg))
             elif msg[3].lower() in ["average", "mean", "avg", "mn"]:
-                await message.channel.send(searchfunctions.wraverage(msg))
+                await message.channel.send(sf.wraverage(msg))
 
-
+keep_alive.keep_alive()
 client.run(token)
