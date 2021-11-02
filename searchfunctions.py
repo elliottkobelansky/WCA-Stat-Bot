@@ -21,12 +21,15 @@ def timeformat(solvetime):
     solvetime = float(solvetime)
     # Do nothing if number is less than one minute
     if float(solvetime) < 60.00:
-        return(solvetime)
+        return('{0:.2f}'.format(solvetime))
 
     # Format m:s.ms if more than a minute
     if float(solvetime) >= 60.00:
-        # Miliseconds
+        # Miliseconds (this should be centiseconds but im lazy to change)
         solvetime_ms = int(round(solvetime - int(solvetime), 2) * 100)
+        # Add leading 0 if necessary
+        if solvetime_ms < 10:
+            solve_time_ms = f"0{solvetime_ms}"
         # Seconds (without ms)
         solvetime_s = int(solvetime) % 60
         # Add leading 0 if seconds bad
@@ -53,7 +56,7 @@ def wraverage(message):
     """
     rank = int(message[2]) - 1
     # Gets WCA ID (NEED TO CHANGE THIS TO NAME)
-    wcaid = singlesdata[rank][0]
+    wcaid = averagesdata[rank][0]
     name = f"{namesdict[wcaid]} ({wcaid})"
     # Need to format this better. Should get time in xx:xx.xx format
     time = timeformat('{0:.2f}'.format(int(averagesdata[rank][1]) / 100.0))
