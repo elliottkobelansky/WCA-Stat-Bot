@@ -17,17 +17,21 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    msg = message.content.split(" ")
+    msg = message.content.lower()
+    msg = msg.split(" ")
 
     if message.content.startswith('!wca'):
-        # Always be case insensitive
-        if msg[1].lower() == "wr":
-            # Tried to throw in some shorthands
-            if msg[3].lower() in ["single", "sg"]:
-                # Look at searchfunctions.py to see what this does
+        if msg[1] == "wr":
+            if msg[3] in ["single", "sg"]:
                 await message.channel.send(sf.wrsingle(msg))
-            elif msg[3].lower() in ["average", "mean", "avg", "mn"]:
+            elif msg[3] in ["average", "mean", "avg", "mn"]:
                 await message.channel.send(sf.wraverage(msg))
+        if msg[1] == "picture":
+            link = sf.getimage(msg)
+            embed = discord.Embed(title=f"{sf.getname(msg[1])}")
+            embed.set_image(url=sf.getimagelink(msg))
+            await message.channel.send(embed=embed)
+
 
 keep_alive.keep_alive()
 client.run(token)
