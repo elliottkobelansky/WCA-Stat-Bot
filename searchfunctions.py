@@ -82,7 +82,8 @@ def getimagelink(message):
     # My dad wrote a bash script for me, i have no idea how this shit works so just trust the process...
     
     url = getwcaprofile(message)
-    bashscript = (f'''wget -O - https://www.worldcubeassociation.org/persons/{message[2]} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\\"//" | sed "s/\\\".*$//"''')
+    bashscript = (f'''wget -O - {url} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\\"//" | 
+    sed "s/\\\".*$//"''')
     link = subprocess.getoutput(bashscript)
     return(link)
 
