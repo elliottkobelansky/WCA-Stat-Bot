@@ -2,9 +2,7 @@ import pandas as pd
 import re
 import numpy as np
 import time
-import httplib2
-from bs4 import BeautifulSoup, SoupStrainer
-import urllib.request
+import subprocess
 
 # Random database stuff
 dfsingles = pd.read_csv("3bld_stats/RanksSingle.csv")
@@ -18,8 +16,6 @@ persons = pd.read_csv("3bld_stats/Persons.csv")
 names = persons[["id", "name"]].values
 id_to_name_d = {person[0]: person[1] for person in names}
 name_to_id_d = {person[1]: person[0] for person in names}
-
- 
 
 
 def timeformat(solvetime):
@@ -71,31 +67,23 @@ def wraverage(message):
     # Print out in nice fashion
     return(f"**WR{rank + 1} Average: {time} by {name}**")
 
+def getwcaprofile(message):
+    """ Wca link based on user request from discord. I still need to change
+        this so that you can just input a name but that requires complicated
+        stuff...
+    """
+    wcaid = message[2].upper()
+    url = f"https://www.worldcubeassociation.org/persons/{wcaid}"
+    return(url)
+
 def getimagelink(message):
     """ Scrapes wca website with given ID for profile photo
     """
-
-    # Source: https://pyshark.com/download-images-from-a-web-page-using-python/
-    # I have no idea how some of this shit works but it does its job so im not
-    # gonna complain
+    # My dad wrote a bash script for me, i have no idea how this shit works so just trust the process...
     
-    # Wca link based on user request from discord. I still need to change this
-    # so that you can just put in a name but that requires some shenanigans so
-    # thats for later
-    wcaid = message[2]
-    url = f"https://www.worldcubeassociation.org/persons/{wcaid}"
-
-    http = httplib2.Http()
-    response, content = http.request(url)
-    images = BeautifulSoup(content, features='html5lib').find_all('img')
-    image_links = []
-
-    for image in images:
-        image_links.append(image['src'])
-
-    # prob not a great idea to hardcode this to the 4th item in the array but
-    # its always the fourth image for a given wca profile so like :/
-    link = image_links[3]
+    url = getwcaprofile(message)
+    bashscript = (f'''wget -O - https://www.worldcubeassociation.org/persons/{message[2]} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\\"//" | sed "s/\\\".*$//"''')
+    link = subprocess.getoutput(bashscript)
     return(link)
 
 def getname(wcaid):
