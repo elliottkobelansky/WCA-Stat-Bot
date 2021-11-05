@@ -59,7 +59,6 @@ def wraverage(message):
     """ Prints the single with a certain world ranking
     """
     rank = int(message[2]) - 1
-    # Gets WCA ID (NEED TO CHANGE THIS TO NAME)
     wcaid = averagesdata[rank][0]
     name = f"{id_to_name_d[wcaid]} ({wcaid})"
     # Need to format this better. Should get time in xx:xx.xx 
@@ -79,7 +78,8 @@ def getwcaprofile(message):
 def getimagelink(message):
     """ Scrapes wca website with given ID for profile photo
     """
-    # My dad wrote a bash script for me, i have no idea how this shit works so just trust the process...
+    # My dad wrote a bash script for me, i have no idea how this shit works so 
+    # just trust the process...
     
     url = getwcaprofile(message)
     bashscript = (f'''wget -O - {url} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\\"//" | 

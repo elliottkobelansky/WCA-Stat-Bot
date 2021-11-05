@@ -1,10 +1,11 @@
 import discord
 import searchfunctions as sf
+import embedfunctions as ef
 import keep_alive
-
 
 with open('token.txt') as f:
     token = f.read()
+
 
 client = discord.Client()
 
@@ -26,24 +27,7 @@ async def on_message(message):
             elif msg[3].lower() in ["average", "mean", "avg", "mn"]:
                 await message.channel.send(sf.wraverage(msg))
         if msg[1].lower() in ["picture", "avatar", "pic"]:
-            if msg[2].lower() != "bufy":
-                link = sf.getimagelink(msg)
-                name = sf.getname(msg[2].upper())
-                apostrophe = '\''
-                # ugh this is sloppy
-                embed = discord.Embed(title=f"{name} ({msg[2].upper()})",
-                url=f"{sf.getwcaprofile(msg)}",
-                description=f"""{name}{f'{chr(39)}''s' if name[-1] != 's' else 
-                f'{chr(39)}'} WCA Profile""")
-                if link != None:
-                    embed.set_image(url=link)
-                await message.channel.send(embed=embed)
-            else:
-                # Obligatory bufy command
-                embed = discord.Embed(title="bufy")
-                embed.set_image(url="""https://cdn.discordapp.com/attachments/
-                714687172418207814/905994981049770014/buffy.png""")
-                await message.channel.send(embed=embed)
+            await message.channel.send(embed=ef.embed_picture(msg))
 
 
 keep_alive.keep_alive()
