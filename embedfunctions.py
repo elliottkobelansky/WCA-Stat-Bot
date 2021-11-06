@@ -5,24 +5,19 @@ import searchfunctions as sf
 def embed_result(message):
     """ Prints out result that was requested by the user
     """
-    # Placeholder value. To implement later. Should be whatever rank is asked
-    info = sf.wrsingle(message)
-    rank = info["rank"]
-    # Placeholder rank type. To implement later (should be either World,
-    # Continent (e.g. North America), or Country (e.g. Canada))
-    x = 0
-    # Single or Mean, maybe something different for MBLD when i get there
-    # need to change this from message[3] to variable thing
-    solvetype = info["type"]
-    # Not hard to do
+    if message[1].lower() == "wr":
+        info = sf.get_wr_result(message)
+    elif message[1].lower() == "nr":
+        info = sf.get_nr_result(message)
+
+    if info['rank'] == 1: info['rank'] = "" 
+    # Gets image for a given WCAID
     link = sf.getimagelink(info["wcaid"])
-    time = info["time"]
-    wcaid = info["wcaid"]
-    name = info["name"]
     
-    embed = discord.Embed(title=f"{name} ({wcaid})")
+    embed = discord.Embed(title=f"{info['name']} ({info['wcaid']})")
     embed.set_thumbnail(url=link)
-    embed.add_field(name=f"WR{rank} {solvetype}:", value=f"{time}")
+    embed.add_field(name=f"{info['country']}{info['ranktype']}{info['rank']} {info['solvetype']}:", 
+                    value=f"{info['time']}")
     return(embed)
 
 
