@@ -1,29 +1,11 @@
 import pandas as pd
-import re
 import numpy as np
-import time
 import subprocess
-from emoji import emojize
+import sqlite3
 
-# Random database stuff
-dfsingles = pd.read_csv("3bld_stats/RanksSingle.csv")
-singlesdata = dfsingles[["personId", "best", 
-                         "worldRank", "countryRank"]].values
-singlesdict = {row[2]: [row[0], row[1]] for row in singlesdata}
-
-
-dfaverages = pd.read_csv("3bld_stats/RanksAverage.csv")
-averagesdata = dfaverages[["personId", "best", 
-                           "worldRank", "countryRank"]].values
-persons = pd.read_csv("3bld_stats/Persons.csv")
-names = persons[["id", "name", "countryId"]].values
-id_to_name_d = {person[0]: person[1] for person in names}
-id_to_country_d = {person[0]: person[2] for person in names}
-name_to_id_d = {person[1]: person[0] for person in names}
-
-dfcountries = pd.read_csv("3bld_stats/Countries.csv")
-countries = dfcountries[["id", "iso2"]].values
-countryd = {country[0]: country[1] for country in countries}
+# Import WCA.db (sql database)
+con = sqlite3.connect("3bld_stats/WCA.db")
+db = con.cursor()
 
 def timeformat(time):
     """ Takes xxxx format and adjusts it
@@ -41,7 +23,7 @@ def timeformat(time):
         solvetime_ms = int(round(solvetime - int(solvetime), 2) * 100)
         # Add leading 0 if necessary
         if solvetime_ms < 10:
-            solve_time_ms = f"0{solvetime_ms}"
+            solvetime_ms = f"0{str(solvetime_ms)}"
         # Seconds (without ms)
         solvetime_s = int(solvetime) % 60
         # Add leading 0 if seconds bad
@@ -51,57 +33,115 @@ def timeformat(time):
         solvetime_m = int(int(solvetime) / 60)
         return(f"{solvetime_m}:{solvetime_s}.{solvetime_ms}")
 
+def mbldformat(n):
+    # Taken from README of wca export 
+    difference = 99 - int(f"{n[0]}{n[1]}")
+    time = int(f"{n[2]}{n[3]}{n[4]}{n[5]}{n[6]}") 
+    seconds = time % 60
+    minutes = int((time - seconds)/60)
+    if minutes < 10: minutes = f"0{minutes}"
+    if seconds < 10: seconds = f"0{seconds}"
+    time = f"{minutes}:{seconds}"
+
+    missed = int(f"{n[7]}{n[8]}")
+    solved = difference + missed
+    attempted = solved + missed
+
+    return(f"{solved}/{attempted} in {time}")
+
+
+
 def get_wr_result(message):
     """ Prints the result with a certain world ranking
     """
-    rank = int(message[2]) - 1
-    # Depending on if single or mean is requested, get wcaid, time, solvetype
-    if message[3].lower() in ["single", "sg", "s"]:
-        wcaid = singlesdata[rank][0]
-        time = timeformat(singlesdata[rank][1])
-        solvetype = "Single"
-    if message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]:
-        wcaid = averagesdata[rank][0]
-        time = timeformat(averagesdata[rank][1])
-        solvetype = "Average"
+    rank = message[2]
+    event = message[4]
 
-    # Gets name from wcaid
-    name = id_to_name_d[wcaid]
+    if ";" in event or "\'" in event: return 0
+
+    # Depending on if single or mean is requested, get wcaid, time, solvetype
+    elif message[3].lower() in ["single", "sg", "s"]:
+        db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
+                       countryid, Events.name, eventid FROM (RanksSingle JOIN Persons ON
+                       RanksSingle.personId=Persons.id) JOIN Events ON 
+                       RanksSingle.eventID=Events.id WHERE eventid LIKE "%{event}%" 
+                       AND worldRank={rank}''')
+        solvetype = ' Single'
+        searchresults = db.fetchone()
+
+    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]:
+        db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
+                       countryid, Events.name, eventid FROM (RanksAverage JOIN Persons 
+                       ON RanksAverage.personId=Persons.id) JOIN Events ON 
+                       RanksAverage.eventID=Events.id WHERE eventid LIKE "%{event}%" 
+                       AND worldRank={rank}''')
+        solvetype = ' Average'
+        searchresults = db.fetchone()
+
+    name = searchresults[0]
+    wcaid = searchresults[1]
+    rank = searchresults[3]
+    country = searchresults[4]
+    event = searchresults[5]
+    eventid = searchresults[6]
+    rawtime = searchresults[2]
+    if eventid == "333fm" and solvetype == ' Average': time = '{0:.2f}'.format(int(rawtime)/100.0)
+    elif eventid not in ["333mbf", "333fm"]: time = timeformat(searchresults[2])
+    elif eventid == "333mbf": time = mbldformat(searchresults[2])
+    if event == "333mbf": solvetype = "" 
+
 
     # Thought a dict would be a good thing to use for this
-    return({"rank": rank + 1, "time": time, "name": name, "wcaid": wcaid, 
-            "solvetype": solvetype, "ranktype": "WR", "country": ""})
+    return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
+            'event': event, 'ranktype': 'WR', "solvetype": solvetype,
+            'region': '', 'rawtime': rawtime, 'eventid': eventid})
 
 def get_nr_result(message):
     """ Prints the result with a certain national ranking
     """
+
     rank = int(message[2])
-    country = " ".join(message[4:]).lower()
+    event = message[-1]
+    country = " ".join(message[4:-1]).lower()
+
+    if ";" in event or "\'" in event: return 0
+    if ";" in country or "\'" in country: return 0
 
     # This can probably be combined into one function so that it doesnt have 
     # to repeat in the search functions
-    if message[3].lower() in ["single", "sg", "s"]:
-        for row in singlesdata:
-            if (getcountry(row[0]).lower() == country and int(row[3]) == rank):
-                    wcaid = row[0]
-                    time = timeformat(row[1])
-                    solvetype = "Single"
-                    country = getcountry(wcaid)
-                    break
-    elif message[3].lower() in ["average", "mean", "mn", 
-                                "a", "m", "avg"]: 
-        for row in averagesdata:
-            if (getcountry(row[0]).lower() == country and int(row[3]) == rank):
-                wcaid = row[0]
-                time = timeformat(row[1])
-                solvetype = "Mean"
-                country = getcountry(wcaid)
-                break
-        
-    name = id_to_name_d[wcaid]
+    if message[3].lower() in ["single", "sg", "s"]:     
+        db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
+                    countryid, Events.name, eventId FROM (RanksSingle JOIN Persons ON
+                    RanksSingle.personId=Persons.id) JOIN Events ON 
+                    RanksSingle.eventID=Events.id WHERE eventid LIKE "%{event}%" 
+                    AND countryRank={rank} AND countryid LIKE "%{country}%"''')
+        solvetype = ' Single'
+        searchresults = db.fetchone()
 
-    return({"rank": rank, "time": time, "name": name, "wcaid": wcaid, 
-            "solvetype": solvetype, "ranktype": " NR", "country": country})
+    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: 
+        db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
+                countryid, Events.name, eventId FROM (RanksAverage JOIN Persons 
+                ON RanksAverage.personId=Persons.id) JOIN Events ON 
+                RanksAverage.eventID=Events.id WHERE eventid LIKE "%{event}%" 
+                AND countryRank={rank} AND countryid LIKE "%{country}%"''')
+        solvetype = ' Average'
+        searchresults = db.fetchone()
+
+    name = searchresults[0]
+    wcaid = searchresults[1]
+    rank = searchresults[3]
+    country = searchresults[4]
+    event = searchresults[5]
+    eventid = searchresults[6]
+    rawtime = searchresults[2]
+    if eventid == "333fm": time = rawtime
+    elif eventid not in ["333mbf", "333fm"]: time = timeformat(searchresults[2])
+    elif eventid == "333mbf": time = mbldformat(searchresults[2])
+    if event == "333mbf": solvetype = ""
+
+    return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
+            'event': event, 'ranktype': ' NR', "solvetype": solvetype,
+            'region': country, 'eventid': eventid, "rawtime": rawtime})
 
 
 def getwcaprofile(wcaid):
@@ -123,8 +163,35 @@ def getimagelink(wcaid):
     link = subprocess.getoutput(bashscript)
     return(link)
 
-def getname(wcaid):
-    return(id_to_name_d[wcaid])
+def getavgtimes(dict):
+    # actual spaghetti code pepelaugh
+    db.execute(f'''SELECT value1, value2, value3, value4, value5 FROM RESULTS WHERE
+                eventID="{dict['eventid']}" AND personId="{dict['wcaid']}" AND average={dict['rawtime']}''')
+    searchresults = list(db.fetchone())
+    
+    # Put brackets around non-counting times. This is the worst code ive done by far
+    if len(searchresults) == 5:
+        maxtemp = 0
+        mintemp = 0
+        maxcounter = 0
+        mincounter = 0
+        
+    minvalue = min(searchresults)
+    maxvalue = max(searchresults)
+    minindex = searchresults.index(minvalue)
+    maxvalue = searchresults.index(maxvalue)
 
-def getcountry(wcaid):
-    return(id_to_country_d[wcaid])
+    if dict['eventid'] != "333fm":
+        searchresults = [timeformat(i) for i in searchresults if i != "0" and i != "0"]
+    else:
+        searchresults = [i for i in searchresults if i != "0"]
+
+
+    
+    if len(searchresults) == 5:
+        searchresults[maxvalue] = f'({searchresults[maxvalue]})'
+        searchresults[minindex] = f'({searchresults[minindex]})'
+                
+    print(searchresults)
+
+    return(searchresults)

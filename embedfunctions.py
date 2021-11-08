@@ -5,19 +5,29 @@ import searchfunctions as sf
 def embed_result(message):
     """ Prints out result that was requested by the user
     """
+    
     if message[1].lower() == "wr":
         info = sf.get_wr_result(message)
     elif message[1].lower() == "nr":
         info = sf.get_nr_result(message)
 
-    if info['rank'] == 1: info['rank'] = "" 
+    if info['rank'] == "1": info['rank'] = "" 
     # Gets image for a given WCAID
     link = sf.getimagelink(info["wcaid"])
     
     embed = discord.Embed(title=f"{info['name']} ({info['wcaid']})")
     embed.set_thumbnail(url=link)
-    embed.add_field(name=f"{info['country']}{info['ranktype']}{info['rank']} {info['solvetype']}:", 
+    embed.add_field(name=f"{info['event']} {info['region']}{info['ranktype']}{info['rank']}{info['solvetype']}:", 
                     value=f"{info['time']}")
+
+    if info['solvetype'] == " Average":
+        avgtimes = sf.getavgtimes(info)
+        if len(avgtimes) == 3:
+            embed.set_footer(text=f"Times: {avgtimes[0]}, {avgtimes[1]}, {avgtimes[2]}")
+        if len(avgtimes) == 5:
+            embed.set_footer(text=f"Times: {avgtimes[0]}, {avgtimes[1]}, {avgtimes[2]}, {avgtimes[3]}, {avgtimes[4]}")
+
+
     return(embed)
 
 
