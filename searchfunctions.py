@@ -33,6 +33,7 @@ def timeformat(time):
         solvetime_m = int(int(solvetime) / 60)
         return(f"{solvetime_m}:{solvetime_s}.{solvetime_ms}")
 
+
 def mbldformat(n):
     # Taken from README of wca export 
     difference = 99 - int(f"{n[0]}{n[1]}")
@@ -50,34 +51,27 @@ def mbldformat(n):
     return(f"{solved}/{attempted} in {time}")
 
 
-
 def get_wr_result(message):
     """ Prints the result with a certain world ranking
     """
     rank = message[2]
     event = message[4]
 
-    if ";" in event or "\'" in event: return 0
-
     # Depending on if single or mean is requested, get wcaid, time, solvetype
-    elif message[3].lower() in ["single", "sg", "s"]:
-        db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
-                       countryid, Events.name, eventid FROM (RanksSingle JOIN Persons ON
-                       RanksSingle.personId=Persons.id) JOIN Events ON 
-                       RanksSingle.eventID=Events.id WHERE eventid LIKE "%{event}%" 
-                       AND worldRank={rank}''')
-        solvetype = ' Single'
-        searchresults = db.fetchone()
+    if message[3].lower() in ["single", "sg", "s"]: solvetype = "Single"
+        
 
-    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]:
-        db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
-                       countryid, Events.name, eventid FROM (RanksAverage JOIN Persons 
-                       ON RanksAverage.personId=Persons.id) JOIN Events ON 
-                       RanksAverage.eventID=Events.id WHERE eventid LIKE "%{event}%" 
-                       AND worldRank={rank}''')
-        solvetype = ' Average'
-        searchresults = db.fetchone()
+    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: solvetype = "Average"
+    
+    db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
+                       countryid, Events.name, eventid FROM (Ranks{solvetype} JOIN Persons ON
+                       Ranks{solvetype}.personId=Persons.id) JOIN Events ON 
+                       Ranks{solvetype}.eventID=Events.id WHERE eventid LIKE ?
+                       AND worldRank=?''', [f'%{event}%', rank])
+    searchresults = db.fetchone()
 
+    # This is sorta brute force sorry 
+    solvetype = f' {solvetype}'
     name = searchresults[0]
     wcaid = searchresults[1]
     rank = searchresults[3]
@@ -96,6 +90,7 @@ def get_wr_result(message):
             'event': event, 'ranktype': 'WR', "solvetype": solvetype,
             'region': '', 'rawtime': rawtime, 'eventid': eventid})
 
+
 def get_nr_result(message):
     """ Prints the result with a certain national ranking
     """
@@ -104,29 +99,19 @@ def get_nr_result(message):
     event = message[-1]
     country = " ".join(message[4:-1]).lower()
 
-    if ";" in event or "\'" in event: return 0
-    if ";" in country or "\'" in country: return 0
+    # Set up variables
+    if message[3].lower() in ["single", "sg", "s"]: solvetype = " Single"
+    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: solvetype = " Average"
 
-    # This can probably be combined into one function so that it doesnt have 
-    # to repeat in the search functions
-    if message[3].lower() in ["single", "sg", "s"]:     
-        db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
-                    countryid, Events.name, eventId FROM (RanksSingle JOIN Persons ON
-                    RanksSingle.personId=Persons.id) JOIN Events ON 
-                    RanksSingle.eventID=Events.id WHERE eventid LIKE "%{event}%" 
-                    AND countryRank={rank} AND countryid LIKE "%{country}%"''')
-        solvetype = ' Single'
-        searchresults = db.fetchone()
+    # SQL Query
+    db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
+                countryid, Events.name, eventId FROM (Ranks{solvetype} JOIN Persons ON
+                Ranks{solvetype}.personId=Persons.id) JOIN Events ON 
+                Ranks{solvetype}.eventID=Events.id WHERE eventid LIKE ? 
+                AND countryRank=? AND countryid LIKE ?''', [f'%{event}%', rank, f'%{country}%'])
+    searchresults = db.fetchone()
 
-    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: 
-        db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
-                countryid, Events.name, eventId FROM (RanksAverage JOIN Persons 
-                ON RanksAverage.personId=Persons.id) JOIN Events ON 
-                RanksAverage.eventID=Events.id WHERE eventid LIKE "%{event}%" 
-                AND countryRank={rank} AND countryid LIKE "%{country}%"''')
-        solvetype = ' Average'
-        searchresults = db.fetchone()
-
+    solvetype = f" {solvetype}"
     name = searchresults[0]
     wcaid = searchresults[1]
     rank = searchresults[3]
@@ -144,6 +129,49 @@ def get_nr_result(message):
             'region': country, 'eventid': eventid, "rawtime": rawtime})
 
 
+def get_cr_result(message):
+    continentdict = {"afr": "Africa", "nar": "North America", "asr": "Asia",
+                     "er": "Europe", "eur": "Europe", "sar": "South America",
+                     "ocr": "Oceania"}
+                
+    continent = continentdict[message[1].lower()]
+    continentid = f"_{continent}"
+    rank = message[2]
+    event = message[4]
+
+    if message[3].lower() in ["single", "sg", "s"]: solvetype = 'Single'
+    elif message[3].lower() in ["average", "mean", "m", "a", "avg", "mn"]: solvetype = 'Average'
+
+    db.execute(f'''SELECT Persons.name, Persons.id, best, continentRank, 
+                   continentid, Events.name, eventid FROM ((Ranks{solvetype} JOIN Persons ON
+                   Ranks{solvetype}.personId=Persons.id) JOIN Events ON 
+                   Ranks{solvetype}.eventId=Events.id) JOIN Countries ON
+                   Persons.countryId=Countries.id
+                   WHERE eventid LIKE ? 
+                   AND continentRank=? AND continentId=?''', 
+                   [f'%{event}%', rank, continentid])
+    searchresults = db.fetchone()
+
+    solvetype = f' {solvetype}'
+    name = searchresults[0]
+    wcaid = searchresults[1]
+    rank = searchresults[3]
+    region = message[1].upper()
+    event = searchresults[5]
+    eventid = searchresults[6]
+    rawtime = searchresults[2]
+    if eventid == "333fm": time = rawtime
+    elif eventid not in ["333mbf", "333fm"]: time = timeformat(searchresults[2])
+    elif eventid == "333mbf": time = mbldformat(searchresults[2])
+    if event == "333mbf": solvetype = ""
+
+    return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
+            'event': event, 'ranktype': '', "solvetype": solvetype,
+            'region': region, 'eventid': eventid, "rawtime": rawtime})
+
+    print(searchresults)
+
+
 def getwcaprofile(wcaid):
     """ Wca link based on user request from discord. I still need to change
         this so that you can just input a name but that requires complicated
@@ -152,6 +180,7 @@ def getwcaprofile(wcaid):
     wcaid = message.upper()
     url = f"https://www.worldcubeassociation.org/persons/{wcaid}"
     return(url)
+
 
 def getimagelink(wcaid):
     """ Scrapes wca website with given ID for profile photo
@@ -163,11 +192,13 @@ def getimagelink(wcaid):
     link = subprocess.getoutput(bashscript)
     return(link)
 
+
 def getavgtimes(dict):
     # actual spaghetti code pepelaugh
     db.execute(f'''SELECT value1, value2, value3, value4, value5 FROM RESULTS WHERE
                 eventID="{dict['eventid']}" AND personId="{dict['wcaid']}" AND average={dict['rawtime']}''')
-    searchresults = list(db.fetchone())
+    searchresults = db.fetchone()
+    searchresults = [float(x) for x in searchresults]
     
     # Put brackets around non-counting times. This is the worst code ive done by far
     if len(searchresults) == 5:
@@ -175,23 +206,19 @@ def getavgtimes(dict):
         mintemp = 0
         maxcounter = 0
         mincounter = 0
-        
+ 
     minvalue = min(searchresults)
     maxvalue = max(searchresults)
     minindex = searchresults.index(minvalue)
     maxvalue = searchresults.index(maxvalue)
 
     if dict['eventid'] != "333fm":
-        searchresults = [timeformat(i) for i in searchresults if i != "0" and i != "0"]
+        searchresults = [timeformat(i) for i in searchresults if int(i) != 0 and int(i) != -1]
     else:
         searchresults = [i for i in searchresults if i != "0"]
 
-
-    
     if len(searchresults) == 5:
         searchresults[maxvalue] = f'({searchresults[maxvalue]})'
         searchresults[minindex] = f'({searchresults[minindex]})'
                 
-    print(searchresults)
-
     return(searchresults)

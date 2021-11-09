@@ -21,9 +21,10 @@ async def on_message(message):
     msg = message.content.split(" ")
 
     if message.content.startswith('!wca'):
-        if msg[1].lower() in  ["wr", "nr"]:
+        if msg[1].lower() in  ["wr", "nr", "afr", "nar", "eur", 
+                               "asr", "er", "sar", "ocr"]:
             await message.channel.send(embed=ef.embed_result(msg))
-        if msg[1].lower() in ["picture", "avatar", "pic"]:
+        elif msg[1].lower() in ["picture", "avatar", "pic"]:
             await message.channel.send(embed=ef.embed_picture(msg[2]))
 
 keep_alive.keep_alive()

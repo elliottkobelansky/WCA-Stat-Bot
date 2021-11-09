@@ -10,6 +10,8 @@ def embed_result(message):
         info = sf.get_wr_result(message)
     elif message[1].lower() == "nr":
         info = sf.get_nr_result(message)
+    elif message[1].lower() in ["afr", "nar", "eur", "asr", "er", "sar", "ocr"]:
+        info = sf.get_cr_result(message)
 
     if info['rank'] == "1": info['rank'] = "" 
     # Gets image for a given WCAID
