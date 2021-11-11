@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import subprocess
 import sqlite3
+from emoji import emojize
 
 # Import WCA.db (sql database)
-con = sqlite3.connect("3bld_stats/WCA.db")
+con = sqlite3.connect("../WCA.db")
 db = con.cursor()
 
 def timeformat(time):
@@ -64,7 +65,7 @@ def get_wr_result(message):
     elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: solvetype = "Average"
     
     db.execute(f'''SELECT Persons.name, Persons.id, best, worldRank, 
-                       countryid, Events.name, eventid FROM (Ranks{solvetype} JOIN Persons ON
+                       countryid, Events.name, eventid, countryid FROM (Ranks{solvetype} JOIN Persons ON
                        Ranks{solvetype}.personId=Persons.id) JOIN Events ON 
                        Ranks{solvetype}.eventID=Events.id WHERE eventid LIKE ?
                        AND worldRank=?''', [f'%{event}%', rank])
@@ -78,6 +79,7 @@ def get_wr_result(message):
     country = searchresults[4]
     event = searchresults[5]
     eventid = searchresults[6]
+    country = searchresults[7]
     rawtime = searchresults[2]
     if eventid == "333fm" and solvetype == ' Average': time = '{0:.2f}'.format(int(rawtime)/100.0)
     elif eventid not in ["333mbf", "333fm"]: time = timeformat(searchresults[2])
@@ -88,7 +90,7 @@ def get_wr_result(message):
     # Thought a dict would be a good thing to use for this
     return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
             'event': event, 'ranktype': 'WR', "solvetype": solvetype,
-            'region': '', 'rawtime': rawtime, 'eventid': eventid})
+            'country': country, 'rawtime': rawtime, 'eventid': eventid})
 
 
 def get_nr_result(message):
@@ -100,8 +102,8 @@ def get_nr_result(message):
     country = " ".join(message[4:-1]).lower()
 
     # Set up variables
-    if message[3].lower() in ["single", "sg", "s"]: solvetype = " Single"
-    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: solvetype = " Average"
+    if message[3].lower() in ["single", "sg", "s"]: solvetype = "Single"
+    elif message[3].lower() in ["average", "mean", "mn", "a", "m", "avg"]: solvetype = "Average"
 
     # SQL Query
     db.execute(f'''SELECT Persons.name, Persons.id, best, countryRank, 
@@ -125,8 +127,8 @@ def get_nr_result(message):
     if event == "333mbf": solvetype = ""
 
     return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
-            'event': event, 'ranktype': ' NR', "solvetype": solvetype,
-            'region': country, 'eventid': eventid, "rawtime": rawtime})
+            'event': event, 'ranktype': 'NR', "solvetype": solvetype,
+            'country': country, 'eventid': eventid, "rawtime": rawtime})
 
 
 def get_cr_result(message):
@@ -143,7 +145,7 @@ def get_cr_result(message):
     elif message[3].lower() in ["average", "mean", "m", "a", "avg", "mn"]: solvetype = 'Average'
 
     db.execute(f'''SELECT Persons.name, Persons.id, best, continentRank, 
-                   continentid, Events.name, eventid FROM ((Ranks{solvetype} JOIN Persons ON
+                   continentid, Events.name, eventid, Persons.countryid FROM ((Ranks{solvetype} JOIN Persons ON
                    Ranks{solvetype}.personId=Persons.id) JOIN Events ON 
                    Ranks{solvetype}.eventId=Events.id) JOIN Countries ON
                    Persons.countryId=Countries.id
@@ -152,6 +154,7 @@ def get_cr_result(message):
                    [f'%{event}%', rank, continentid])
     searchresults = db.fetchone()
 
+    # Sorry for spaghetti 
     solvetype = f' {solvetype}'
     name = searchresults[0]
     wcaid = searchresults[1]
@@ -159,6 +162,7 @@ def get_cr_result(message):
     region = message[1].upper()
     event = searchresults[5]
     eventid = searchresults[6]
+    country = searchresults[7]
     rawtime = searchresults[2]
     if eventid == "333fm": time = rawtime
     elif eventid not in ["333mbf", "333fm"]: time = timeformat(searchresults[2])
@@ -166,8 +170,8 @@ def get_cr_result(message):
     if event == "333mbf": solvetype = ""
 
     return({'name': name, "wcaid": wcaid, "time": time, "rank": rank,
-            'event': event, 'ranktype': '', "solvetype": solvetype,
-            'region': region, 'eventid': eventid, "rawtime": rawtime})
+            'event': event, "solvetype": solvetype, 'country': country,
+            'ranktype': region, 'eventid': eventid, "rawtime": rawtime})
 
     print(searchresults)
 
@@ -190,10 +194,12 @@ def getimagelink(wcaid):
     
     bashscript = (f'''wget -O - https://www.worldcubeassociation.org/persons/{wcaid} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\\"//" | sed "s/\\\".*$//"''')
     link = subprocess.getoutput(bashscript)
+    if link == "": link="https://www.worldcubeassociation.org/assets/missing_avatar_thumb-12654dd6f1aa6d458e80d02d6eed8b1fbea050a04beeb88047cb805a4bfe8ee0.png"
     return(link)
 
 
 def getavgtimes(dict):
+
     # actual spaghetti code pepelaugh
     db.execute(f'''SELECT value1, value2, value3, value4, value5 FROM RESULTS WHERE
                 eventID="{dict['eventid']}" AND personId="{dict['wcaid']}" AND average={dict['rawtime']}''')
@@ -222,3 +228,9 @@ def getavgtimes(dict):
         searchresults[minindex] = f'({searchresults[minindex]})'
                 
     return(searchresults)
+
+def getflagemoji(country):
+    # This is actually pretty cool i am proud of this
+    db.execute(f"SELECT iso2 FROM Countries WHERE id='{country}'")
+    code = db.fetchone()[0].lower()
+    return(emojize(f":flag_{code}:"))

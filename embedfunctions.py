@@ -12,14 +12,19 @@ def embed_result(message):
         info = sf.get_nr_result(message)
     elif message[1].lower() in ["afr", "nar", "eur", "asr", "er", "sar", "ocr"]:
         info = sf.get_cr_result(message)
+    
+    # Removes redudant 1 in front of record (WR1 => WR)
+    if info['rank'] == "1": info['rank'] = ""
 
-    if info['rank'] == "1": info['rank'] = "" 
+    emoji = sf.getflagemoji(info['country']) 
+
     # Gets image for a given WCAID
     link = sf.getimagelink(info["wcaid"])
+    wcalink = f"https://www.worldcubeassociation.org/persons/{info['wcaid']}"
     
-    embed = discord.Embed(title=f"{info['name']} ({info['wcaid']})")
+    embed = discord.Embed(title=f"{info['name']} - {info['country']}  {emoji}", url=wcalink, color=discord.Color.blue())
     embed.set_thumbnail(url=link)
-    embed.add_field(name=f"{info['event']} {info['region']}{info['ranktype']}{info['rank']}{info['solvetype']}:", 
+    embed.add_field(name=f"{info['event']} {info['ranktype']}{info['rank']}{info['solvetype']}:", 
                     value=f"{info['time']}")
 
     if info['solvetype'] == " Average":
@@ -58,3 +63,7 @@ def embed_picture(wcaid):
         embed.set_image(url="""https://www.worldcubeassociation.org/assets/missing_avatar_thumb-12654dd6f1aa6d458e80d02d6eed8b1fbea050a04beeb88047cb805a4bfe8ee0.png""")
 
     return(embed)
+
+def embed_help():
+    embed.discord.Embed(name="Help")
+    pass
