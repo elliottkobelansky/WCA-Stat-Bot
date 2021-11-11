@@ -1,5 +1,4 @@
 import discord
-import searchfunctions as sf
 import embedfunctions as ef
 import keep_alive
 

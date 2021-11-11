@@ -1,17 +1,12 @@
 import discord
 import searchfunctions as sf
-
+import utilityfunctions as uf
 
 def embed_result(message):
     """ Prints out result that was requested by the user
     """
     
-    if message[1].lower() == "wr":
-        info = sf.get_wr_result(message)
-    elif message[1].lower() == "nr":
-        info = sf.get_nr_result(message)
-    elif message[1].lower() in ["afr", "nar", "eur", "asr", "er", "sar", "ocr"]:
-        info = sf.get_cr_result(message)
+    info = sf.getresult(message)
     
     # Removes redudant 1 in front of record (WR1 => WR)
     if info['rank'] == "1": info['rank'] = ""
@@ -19,12 +14,12 @@ def embed_result(message):
     emoji = sf.getflagemoji(info['country']) 
 
     # Gets image for a given WCAID
-    link = sf.getimagelink(info["wcaid"])
+    link = uf.getimagelink(info["wcaid"])
     wcalink = f"https://www.worldcubeassociation.org/persons/{info['wcaid']}"
     
     embed = discord.Embed(title=f"{info['name']} - {info['country']}  {emoji}", url=wcalink, color=discord.Color.blue())
     embed.set_thumbnail(url=link)
-    embed.add_field(name=f"{info['event']} {info['ranktype']}{info['rank']}{info['solvetype']}:", 
+    embed.add_field(name=f"{info['event']} {info['ranktype']}{info['rank']} {info['solvetype']}", 
                     value=f"{info['time']}")
 
     if info['solvetype'] == " Average":
@@ -46,7 +41,7 @@ def embed_picture(wcaid):
     wcaid = wcaid.upper()
     # Bufy Easter egg
     if wcaid != "BUFY":
-        imagelink = sf.getimagelink(wcaid)
+        imagelink = uf.getimagelink(wcaid)
         name = sf.getname(wcaid)
     else:
         imagelink = f"""https://cdn.discordapp.com/attachments/714687172418207814/905994981049770014/buffy.png"""
@@ -65,5 +60,6 @@ def embed_picture(wcaid):
     return(embed)
 
 def embed_help():
+    # TODO, obviously
     embed.discord.Embed(name="Help")
     pass
