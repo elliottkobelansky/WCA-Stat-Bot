@@ -1,36 +1,39 @@
 import discord
 import searchfunctions as sf
-import utilityfunctions as uf
+
+def create_embed_header(wcaid):
+    Person = sf.WcaPerson(wcaid)
+    embed = discord.Embed(title=f"{Person.name} - {Person.country}  {Person.emoji}",
+                          url=Person.wcalink, color=discord.Color.blue())
+    return(embed)
+
 
 def embed_result(message):
     """ Prints out result that was requested by the user
     """
     
     info = sf.getresult(message)
-    
+    wcaid = info['wcaid']
+    Person = sf.WcaPerson(wcaid)
+    time = sf.ResultTime(info['best'], info['eventid']).ftime
+
     # Removes redudant 1 in front of record (WR1 => WR)
     if info['rank'] == "1": info['rank'] = ""
-
-    emoji = sf.getflagemoji(info['country']) 
-
-    # Gets image for a given WCAID
-    link = uf.getimagelink(info["wcaid"])
-    wcalink = f"https://www.worldcubeassociation.org/persons/{info['wcaid']}"
     
-    embed = discord.Embed(title=f"{info['name']} - {info['country']}  {emoji}", url=wcalink, color=discord.Color.blue())
-    embed.set_thumbnail(url=link)
+    embed = create_embed_header(wcaid)
+    embed.set_thumbnail(url=Person.imagelink)
     embed.add_field(name=f"{info['event']} {info['ranktype']}{info['rank']} {info['solvetype']}", 
-                    value=f"{info['time']}")
+                    value=f"{time}")
 
-    if info['solvetype'] == " Average":
+    if info['solvetype'] == "Average":
         avgtimes = sf.getavgtimes(info)
-        if len(avgtimes) == 3:
-            embed.set_footer(text=f"Times: {avgtimes[0]}, {avgtimes[1]}, {avgtimes[2]}")
-        if len(avgtimes) == 5:
-            embed.set_footer(text=f"Times: {avgtimes[0]}, {avgtimes[1]}, {avgtimes[2]}, {avgtimes[3]}, {avgtimes[4]}")
-
+        embed.set_footer(text=avgtimes)
 
     return(embed)
+
+
+def embed_profile(message):
+    pass
 
 
 def embed_picture(wcaid):
@@ -41,7 +44,7 @@ def embed_picture(wcaid):
     wcaid = wcaid.upper()
     # Bufy Easter egg
     if wcaid != "BUFY":
-        imagelink = uf.getimagelink(wcaid)
+        imagelink = sf.getimagelink(wcaid)
         name = sf.getname(wcaid)
     else:
         imagelink = f"""https://cdn.discordapp.com/attachments/714687172418207814/905994981049770014/buffy.png"""
@@ -58,6 +61,7 @@ def embed_picture(wcaid):
         embed.set_image(url="""https://www.worldcubeassociation.org/assets/missing_avatar_thumb-12654dd6f1aa6d458e80d02d6eed8b1fbea050a04beeb88047cb805a4bfe8ee0.png""")
 
     return(embed)
+
 
 def embed_help():
     # TODO, obviously
