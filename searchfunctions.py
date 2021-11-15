@@ -80,14 +80,10 @@ def getresult(message):
     return(resultdict)
 
 
-def getworstresult(solvetype, eventid):
-    pass
-
-
 def get_person_wca_id(namelist):
+    
     query = ("SELECT id FROM Persons WHERE subid = 1") \
             + (" AND name LIKE ?") * len(namelist)
-    print(query)
     
     for i in range(len(namelist)):
         namelist[i] = f"%{namelist[i]}%"
@@ -95,69 +91,146 @@ def get_person_wca_id(namelist):
     db.execute(query, namelist)
     results = db.fetchall()
     results = [x[0] for x in results]
-    return(results)
+    return(results[0])
 
 
-def get_person_result(wcaid, event, solvetype):
-    pass
-
+def sort_events(x):
+    eventlist = [
+        "3x3",
+        "2x2",
+        "4x4",
+        "5x5",
+        "6x6",
+        "7x7",
+        "3BLD",
+        "FMC",
+        "OH",
+        "Clock",
+        "Megaminx",
+        "Pyraminx",
+        "Skewb",
+        "Square-1",
+        "4BLD",
+        "5BLD",
+        "MBLD"
+    ]
+    return(eventlist.index(x))
 
 class WcaPerson:
     '''Class that represents a Person in the WCA db
     '''
     def __init__(self, wcaid):
         self.wcaid = wcaid
-        self.name = self.get_person_name(self.wcaid)
-        self.country = self.get_person_country(self.wcaid)
-        self.continent = self.get_person_continent(self.country)
-        self.wcalink = self.get_person_wca_link(self.wcaid)
-        self.emoji = self.get_person_flag_emoji(self.country)
-        self.imagelink = self.get_person_image_link(self.wcaid)
+        self.name = self.get_person_name()
+        self.country = self.get_person_country()
+        self.continent = self.get_person_continent()
+        self.wcalink = self.get_person_wca_link()
+        self.emoji = self.get_person_flag_emoji()
+        self.imagelink = self.get_person_image_link()
 
-    def get_person_name(self, wcaid):
-        db.execute("SELECT name FROM Persons WHERE id=?", [wcaid])
+
+    def get_person_name(self):
+        db.execute("SELECT name FROM Persons WHERE id=?", [self.wcaid])
         name = db.fetchone()[0]
         return(name)
 
-    def get_person_country(self, wcaid):
-        db.execute("SELECT countryid FROM Persons WHERE id=? AND subid=1", [wcaid])
+
+    def get_person_country(self):
+        db.execute("SELECT countryid FROM Persons WHERE id=? AND subid=1", [self.wcaid])
         country = db.fetchone()[0]
         return(country)
 
-    def get_person_wca_link(self, wcaid):
-        wcalink = f"https://www.worldcubeassociation.org/persons/{wcaid}"
+
+    def get_person_wca_link(self):
+        wcalink = f"https://www.worldcubeassociation.org/persons/{self.wcaid}"
         return(wcalink)
 
-    def get_person_continent(self, country):
-        db.execute("SELECT continentId FROM Countries WHERE id=?", [country])
+
+    def get_person_continent(self):
+        db.execute("SELECT continentId FROM Countries WHERE id=?", [self.country])
         continent = db.fetchone()[0]
         return(continent)
 
-    def get_person_flag_emoji(self, country):
-        db.execute(f"SELECT iso2 FROM Countries WHERE id='{country}'")
+
+    def get_person_flag_emoji(self):
+        db.execute(f"SELECT iso2 FROM Countries WHERE id='{self.country}'")
         code = db.fetchone()[0].lower()
         return(emojize(f":flag_{code}:"))
 
-    def get_person_singleresults(self, wcaid):
+
+    def get_person_singleresults(self):
         db.execute("SELECT * FROM RanksSingle WHERE personid  = ?", [self.wcaid])
         results = db.fetchall()
         return(results)
 
-    def get_person_averageresults(self, wcaid):
+
+    def get_person_averageresults(self):
         db.execute("SELECT * FROM RanksAverage WHERE personid = ?", [self.wcaid])
         results = db.fetchall()
         return(results)
 
-    def get_person_image_link(self, wcaid):
+    def getevent(self, id):
+        eventdict = {
+            "222": "2x2",
+            "333": "3x3",
+            "444": "4x4",
+            "555": "5x5",
+            "666": "6x6",
+            "777": "7x7",
+            "333oh": "OH",
+            "333bf": "3BLD",
+            "333fm": "FMC",
+            "333mbf": "MBLD",
+            "clock": "Clock",
+            "minx": "Megaminx",
+            "pyram": "Pyraminx",
+            "skewb": "Skewb",
+            "sq1": "Square-1",
+            "444bf": "4BLD",
+            "555bf": "5BLD"
+        }
+        try:
+            return eventdict[id]
+        except:
+            return(0)
+        db.execute(f"SELECT name FROM Events where id='{id}'")
+        return(db.fetchone()[0])
+
+    def get_person_image_link(self):
         """ Scrapes wca website with given ID for profile photo
         """
         # My dad wrote a bash script for me, i have no idea how this shit works so 
         # just trust the process...
         
-        bashscript = (f'wget -O - https://www.worldcubeassociation.org/persons/{wcaid} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\"//" | sed "s/\\".*$//"')
+        bashscript = (f'wget -O - https://www.worldcubeassociation.org/persons/{self.wcaid} 2>/dev/null | grep img | grep avatar | sed "s/.*src=\\"//" | sed "s/\\".*$//"')
         link = subprocess.getoutput(bashscript)
         if link == "": link="https://www.worldcubeassociation.org/assets/missing_avatar_thumb-12654dd6f1aa6d458e80d02d6eed8b1fbea050a04beeb88047cb805a4bfe8ee0.png"
         return(link)
+
+    def parse_single_results(self):
+        parsed_single_results = {}
+        for result in self.get_person_singleresults():
+            event = self.getevent(result[1])
+            time = ResultTime(result[2], result[1]).ftime
+            wr = result[3]
+            cr = result[4]
+            nr = result[5]
+            parsed_single_results.update({event: [time, wr, cr, nr]})
+        parsed_single_results.pop(0, None)
+        return(parsed_single_results)
+
+    def parse_average_results(self):
+        parsed_average_results = {}
+        for result in self.get_person_averageresults():
+            event = self.getevent(result[1])
+            time = ResultTime(result[2], result[1]).ftime
+            wr = result[3]
+            cr = result[4]
+            nr = result[5]
+            parsed_average_results.update({event: [time, wr, cr, nr]})
+        parsed_average_results.pop(0, None)
+        return(parsed_average_results)
+
 
 class ResultTime:
     def __init__(self, time, event):
@@ -165,6 +238,7 @@ class ResultTime:
         self.event = event
         self.ftime = self.formatresult(self.rawtime, self.event)
 
+    # I realized i could have done some of this stuff in a way better way
     def mbldformat(self, n):
         # Taken from README of WCA export
         difference = 99 - int(f"{n[0]}{n[1]}")

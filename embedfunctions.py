@@ -1,10 +1,10 @@
 import discord
 import searchfunctions as sf
 
-def create_embed_header(wcaid):
-    Person = sf.WcaPerson(wcaid)
+def create_person_embed_header(Person):
     embed = discord.Embed(title=f"{Person.name} - {Person.country}  {Person.emoji}",
                           url=Person.wcalink, color=discord.Color.blue())
+    embed.set_thumbnail(url=Person.imagelink)
     return(embed)
 
 
@@ -20,8 +20,7 @@ def embed_result(message):
     # Removes redudant 1 in front of record (WR1 => WR)
     if info['rank'] == "1": info['rank'] = ""
     
-    embed = create_embed_header(wcaid)
-    embed.set_thumbnail(url=Person.imagelink)
+    embed = create_person_embed_header(Person)
     embed.add_field(name=f"{info['event']} {info['ranktype']}{info['rank']} {info['solvetype']}", 
                     value=f"{time}")
 
@@ -33,6 +32,49 @@ def embed_result(message):
 
 
 def embed_profile(message):
+
+    wcaid = sf.get_person_wca_id(message)
+    Person = sf.WcaPerson(wcaid)
+    single_results = Person.parse_single_results()
+    average_results = Person.parse_average_results()
+
+    for row in single_results:
+        pass
+    
+    embed = create_person_embed_header(Person)
+
+    events_s_a = []
+    
+    for result in single_results:
+        try:
+            events_s_a.append(
+                [result, 
+                single_results[result][0], 
+                average_results[result][0]]
+                )
+        except:
+            events_s_a.append([result, single_results[result][0], "-"])
+
+    
+    events_s_a.sort(key=lambda x: sf.sort_events(x[0]))
+    events = [x[0] for x in events_s_a]
+    singletimes = [x[1] for x in events_s_a]
+    averagetimes = [x[2] for x in events_s_a]
+    events = "\n".join(events)
+    singletimes = "\n".join(singletimes)
+    averagetimes = "\n".join(averagetimes)
+  
+
+    embed.add_field(name="Event", value=events, inline=True)
+    embed.add_field(name="Single", value=singletimes, inline=True)
+    embed.add_field(name="Average", value=averagetimes, inline=True)
+    #embed.add_field(name="WR", value=wr_a_ranks, inline=True)
+    #embed.add_field(name="CR", value=cr_a_ranks, inline=True)
+    #embed.add_field(name="NR", value=nr_a_ranks, inline=True)
+
+    return(embed)
+    
+    
     pass
 
 

@@ -29,6 +29,8 @@ async def on_message(message):
             await message.channel.send(embed=ef.embed_result(msg))
         elif msg[1].lower() in {"picture", "avatar", "pic"}:
             await message.channel.send(embed=ef.embed_picture(msg[2]))
+        elif msg[1].lower() in {"profile", "p", "pf"}:
+            await message.channel.send(embed=ef.embed_profile(msg[2:]))
 
 keep_alive.keep_alive()
 client.run(token)
