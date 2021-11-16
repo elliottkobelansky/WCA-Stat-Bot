@@ -1,5 +1,6 @@
 import discord
 import searchfunctions as sf
+import re
 
 def create_person_embed_header(Person):
     embed = discord.Embed(title=f"{Person.name} - {Person.country}  {Person.emoji}",
@@ -15,7 +16,7 @@ def embed_result(message):
     info = sf.getresult(message)
     wcaid = info['wcaid']
     Person = sf.WcaPerson(wcaid)
-    time = sf.ResultTime(info['best'], info['eventid']).ftime
+    time = sf.ResultTime(info['best'], info['eventid'], info['solvetype']).ftime
 
     # Removes redudant 1 in front of record (WR1 => WR)
     if info['rank'] == "1": info['rank'] = ""
@@ -32,8 +33,12 @@ def embed_result(message):
 
 
 def embed_profile(message):
+    
+    if re.search("\d\d\d\d\D\D\D\D\d\d", message[0]) != None:
+        wcaid = message[0].upper()
+    else: 
+        wcaid = sf.get_person_wca_id(message)
 
-    wcaid = sf.get_person_wca_id(message)
     Person = sf.WcaPerson(wcaid)
     single_results = Person.parse_single_results()
     average_results = Person.parse_average_results()
@@ -43,64 +48,43 @@ def embed_profile(message):
     
     embed = create_person_embed_header(Person)
 
-    events_s_a = []
+    events_s_a = [["Event", "Single", "Average"]]
     
     for result in single_results:
         try:
             events_s_a.append(
                 [result, 
-                single_results[result][0], 
-                average_results[result][0]]
-                )
+                single_results[result][0],
+                average_results[result][0],
+                ])
         except:
-            events_s_a.append([result, single_results[result][0], "-"])
+            events_s_a.append(
+                [result, 
+                single_results[result][0], 
+                "-"
+                ])
 
-    
+
     events_s_a.sort(key=lambda x: sf.sort_events(x[0]))
-    events = [x[0] for x in events_s_a]
-    singletimes = [x[1] for x in events_s_a]
-    averagetimes = [x[2] for x in events_s_a]
-    events = "\n".join(events)
-    singletimes = "\n".join(singletimes)
-    averagetimes = "\n".join(averagetimes)
+
+    # ripped from berkeley exam (thanks anto)
+    listsize = range(len(events_s_a[0]))
+    widths = [max([len(row[c]) for row in events_s_a]) for c in listsize]
+    formatted = []
+    for row in events_s_a:
+        line = ''
+        for i in listsize:
+            s = row[i]
+            line = line + s + ' ' * (widths[i] - len(s) + 1) + '  '
+        formatted.append(line)
+
+    lineseparator = "-" * (sum(widths) + 3 * (len(widths) - 1) + 2)
+    formatted.insert(0, f"```")
+    formatted.insert(2, lineseparator)
+    formatted.append("```")
+    formatted = "\n".join(formatted)
   
-
-    embed.add_field(name="Event", value=events, inline=True)
-    embed.add_field(name="Single", value=singletimes, inline=True)
-    embed.add_field(name="Average", value=averagetimes, inline=True)
-    #embed.add_field(name="WR", value=wr_a_ranks, inline=True)
-    #embed.add_field(name="CR", value=cr_a_ranks, inline=True)
-    #embed.add_field(name="NR", value=nr_a_ranks, inline=True)
-
-    return(embed)
-    
-    
-    pass
-
-
-def embed_picture(wcaid):
-    """ For a given message, make a discord embed with the specified person's
-        image
-    """
-
-    wcaid = wcaid.upper()
-    # Bufy Easter egg
-    if wcaid != "BUFY":
-        imagelink = sf.getimagelink(wcaid)
-        name = sf.getname(wcaid)
-    else:
-        imagelink = f"""https://cdn.discordapp.com/attachments/714687172418207814/905994981049770014/buffy.png"""
-        name = "Bufy"
-        wcaid = "1427BUFY01"
-
-    embed = discord.Embed(title=f"{name} ({wcaid})")
-
-    if imagelink != "":
-        embed.set_image(url=imagelink)
-    else:
-        # Some people dont even have the default image for some reason so this
-        # just sets it to the default one
-        embed.set_image(url="""https://www.worldcubeassociation.org/assets/missing_avatar_thumb-12654dd6f1aa6d458e80d02d6eed8b1fbea050a04beeb88047cb805a4bfe8ee0.png""")
+    embed.add_field(name="Results", value=formatted, inline=True)
 
     return(embed)
 

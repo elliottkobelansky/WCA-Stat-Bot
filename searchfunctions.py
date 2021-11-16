@@ -20,7 +20,7 @@ def getavgtimes(dict):
     minindex = searchresults.index(minvalue)
     maxvalue = searchresults.index(maxvalue)
 
-    results = [ResultTime(i, dict['eventid']).ftime 
+    results = [ResultTime(i, dict['eventid'], dict['solvetype']).ftime 
                for i in searchresults if int(i) != 0 and int(i) != -1]
     
 
@@ -96,6 +96,7 @@ def get_person_wca_id(namelist):
 
 def sort_events(x):
     eventlist = [
+        "Event", 
         "3x3",
         "2x2",
         "4x4",
@@ -106,10 +107,10 @@ def sort_events(x):
         "FMC",
         "OH",
         "Clock",
-        "Megaminx",
-        "Pyraminx",
+        "Mega",
+        "Pyra",
         "Skewb",
-        "Square-1",
+        "SQ1",
         "4BLD",
         "5BLD",
         "MBLD"
@@ -182,10 +183,10 @@ class WcaPerson:
             "333fm": "FMC",
             "333mbf": "MBLD",
             "clock": "Clock",
-            "minx": "Megaminx",
-            "pyram": "Pyraminx",
+            "minx": "Mega",
+            "pyram": "Pyra",
             "skewb": "Skewb",
-            "sq1": "Square-1",
+            "sq1": "SQ1",
             "444bf": "4BLD",
             "555bf": "5BLD"
         }
@@ -211,7 +212,7 @@ class WcaPerson:
         parsed_single_results = {}
         for result in self.get_person_singleresults():
             event = self.getevent(result[1])
-            time = ResultTime(result[2], result[1]).ftime
+            time = ResultTime(result[2], result[1], "Single").ftime
             wr = result[3]
             cr = result[4]
             nr = result[5]
@@ -223,7 +224,7 @@ class WcaPerson:
         parsed_average_results = {}
         for result in self.get_person_averageresults():
             event = self.getevent(result[1])
-            time = ResultTime(result[2], result[1]).ftime
+            time = ResultTime(result[2], result[1], "Average").ftime
             wr = result[3]
             cr = result[4]
             nr = result[5]
@@ -233,10 +234,11 @@ class WcaPerson:
 
 
 class ResultTime:
-    def __init__(self, time, event):
+    def __init__(self, time, event, solvetype):
         self.rawtime = time
         self.event = event
-        self.ftime = self.formatresult(self.rawtime, self.event)
+        self.solvetype = solvetype
+        self.ftime = self.formatresult(self.rawtime, self.event, self.solvetype)
 
     # I realized i could have done some of this stuff in a way better way
     def mbldformat(self, n):
@@ -253,7 +255,7 @@ class ResultTime:
         solved = difference + missed
         attempted = solved + missed
 
-        return(f"{solved}/{attempted} in {time}")
+        return(f"{solved}/{attempted} {time}")
 
     def timeformat(self, time):
         """ Takes xxxx format and adjusts it
@@ -274,9 +276,13 @@ class ResultTime:
             solvetime_m = int(int(solvetime) / 60)
             return(f"{solvetime_m}:{solvetime_s}.{solvetime_ms}")
 
-    def formatresult(self, time, eventid):
-        if eventid == "333fm": 
-            return(time)
+    def formatresult(self, time, eventid, solvetype):
+        if eventid == "333fm":
+            if solvetype == "Single": 
+                return(time)
+            if solvetype == "Average":
+                solvetime = float('{0:.2f}'.format(int(time) / 100.0))
+                return('{0:.2f}'.format(solvetime))
         elif eventid == "333mbf": 
             return(self.mbldformat(time))
         else: 

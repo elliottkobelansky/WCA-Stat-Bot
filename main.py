@@ -27,8 +27,6 @@ async def on_message(message):
         if msg[1].lower() in  {"wr", "nr", "afr", "nar", "eur", 
                                "asr", "er", "sar", "ocr"}:
             await message.channel.send(embed=ef.embed_result(msg))
-        elif msg[1].lower() in {"picture", "avatar", "pic"}:
-            await message.channel.send(embed=ef.embed_picture(msg[2]))
         elif msg[1].lower() in {"profile", "p", "pf"}:
             await message.channel.send(embed=ef.embed_profile(msg[2:]))
 
