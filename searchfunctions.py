@@ -97,7 +97,7 @@ def getwrs():
     wrs = [x for x in wrs if x[1] != 0]
     return(wrs) 
 
-
+def get_person_wca_id(namelist):
 
     query = ("SELECT id FROM Persons WHERE subid = 1") \
         + (" AND name LIKE ?") * len(namelist)
@@ -274,6 +274,21 @@ class WcaPerson:
         parsed_average_results.pop(0, None)
         return(parsed_average_results)
 
+    def get_medals(self):
+        medals = [0, 0, 0]
+        for i in [1, 2, 3]:
+            db.execute(
+                "SELECT pos FROM Results WHERE roundTypeId='f' AND personId=? AND pos=?", [self.wcaid, i]
+                )
+            count = len(db.fetchall())
+            medals[i - 1] = count
+        
+        return(medals)
+        
+    def get_competition_count(self):
+        db.execute("SELECT DISTINCT competitionId FROM Results WHERE personId=?", [self.wcaid])
+        bruh = len(db.fetchall())
+        return bruh
 
 class ResultTime:
     def __init__(self, time, event, solvetype):
