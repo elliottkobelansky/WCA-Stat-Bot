@@ -82,12 +82,10 @@ def embed_profile(message):
     formatted.append("```")
     formatted = "\n".join(formatted)
     
-    medals = Person.get_medals()
     competitioncount = Person.get_competition_count()
 
     embed.add_field(name="Results", value=formatted, inline=True)
-    if medals != [0, 0, 0]:
-        embed.set_footer(text=f"Gold: {medals[0]}, Silver: {medals[1]}, Bronze: {medals[2]}\nCompetitions: {competitioncount}")
+    embed.set_footer(text=f"Competitions: {competitioncount}")
 
     return(embed)
 
