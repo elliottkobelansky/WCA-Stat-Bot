@@ -158,6 +158,13 @@ def sort_events(x):
     ]
     return(eventlist.index(x))
 
+def get_top_x(x, solvetype, region, event):
+    query = f"SELECT * FROM Ranks{solvetype} WHERE eventid = ? ORDER BY cast(worldRank as INTEGER) LIMIT ?"
+    args = [event, x]
+    db.execute(query, args)
+    return db.fetchall()
+
+print(get_top_x(25, "Single", "3", "333bf"))
 
 class WcaPerson:
     '''Class that represents a Person in the WCA db
@@ -165,46 +172,41 @@ class WcaPerson:
 
     def __init__(self, wcaid):
         self.wcaid = wcaid
-        self.name = self.get_person_name()
-        self.country = self.get_person_country()
-        self.continent = self.get_person_continent()
-        self.wcalink = self.get_person_wca_link()
-        self.emoji = self.get_person_flag_emoji()
-        self.imagelink = self.get_person_image_link()
+        self.name = self.get_person_name()   
 
-    def get_person_name(self):
+    def get_name(self):
         db.execute("SELECT name FROM Persons WHERE id=?", [self.wcaid])
         name = db.fetchone()[0]
         return(name)
 
-    def get_person_country(self):
+    def get_country(self):
         db.execute(
             "SELECT countryid FROM Persons WHERE id=? AND subid=1", [self.wcaid])
         country = db.fetchone()[0]
         return(country)
 
-    def get_person_wca_link(self):
+    def get_wca_link(self):
         wcalink = f"https://www.worldcubeassociation.org/persons/{self.wcaid}"
         return(wcalink)
 
-    def get_person_continent(self):
+    def get_continent(self):
         db.execute("SELECT continentId FROM Countries WHERE id=?",
                    [self.country])
         continent = db.fetchone()[0]
         return(continent)
 
-    def get_person_flag_emoji(self):
+    def get_emoji(self):
         db.execute(f"SELECT iso2 FROM Countries WHERE id='{self.country}'")
         code = db.fetchone()[0].lower()
         return(emojize(f":flag_{code}:"))
 
-    def get_person_singleresults(self):
+    def get_singleresults(self):
         db.execute(
             "SELECT * FROM RanksSingle WHERE personid  = ?", [self.wcaid])
         results = db.fetchall()
         return(results)
 
-    def get_person_averageresults(self):
+    def get_averageresults(self):
         db.execute(
             "SELECT * FROM RanksAverage WHERE personid = ?", [self.wcaid])
         results = db.fetchall()
@@ -237,7 +239,7 @@ class WcaPerson:
         db.execute(f"SELECT name FROM Events where id='{id}'")
         return(db.fetchone()[0])
 
-    def get_person_image_link(self):
+    def get_image_link(self):
         """ Scrapes wca website with given ID for profile photo
         """
         # My dad wrote a bash script for me, i have no idea how this shit works so

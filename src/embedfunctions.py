@@ -4,9 +4,9 @@ import re
 
 
 def create_person_embed_header(Person):
-    embed = discord.Embed(title=f"{Person.name} - {Person.country}  {Person.emoji}",
-                          url=Person.wcalink, color=discord.Color.blue())
-    embed.set_thumbnail(url=Person.imagelink)
+    embed = discord.Embed(title=f"{Person.name} - {Person.get_country()}  {Person.get_emoji()}",
+                          url=Person.get_wca_link(), color=discord.Color.blue())
+    embed.set_thumbnail(url=Person.get_image_link())
     return(embed)
 
 
@@ -109,7 +109,21 @@ def world_records():
         
     return(embed)
 
+def top_x(msg):
+    x = msg[0]
+    solvetype = msg[1] # Single or average
+    region = msg[2]
+    event = msg[3]
+    
+    if x > 20 or x < 1:
+        embed = embed.discord.Embed(
+            name="Error", value="Please enter a value between 1 and 25"
+            )
+        return(embed)
 
+    results = sf.get_top_x(x, solvetype, region, event)
+    
+    pass
 
 def embed_help():
     # TODO, obviously

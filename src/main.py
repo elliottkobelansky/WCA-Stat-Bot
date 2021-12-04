@@ -1,5 +1,5 @@
 import discord
-import embedfunctions as ef
+import parse as pf
 import keep_alive
 
 
@@ -28,11 +28,13 @@ async def on_message(message):
     if message.content.startswith('!wca'):
         if msg[1].lower() in {"wr", "nr", "afr", "nar", "eur",
                               "asr", "er", "sar", "ocr"}:
-            await message.channel.send(embed=ef.embed_result(msg))
+            await message.channel.send(embed=pf.best_from_rank(msg[1:]))
         elif msg[1].lower() in {"profile", "p", "pf"}:
-            await message.channel.send(embed=ef.embed_profile(msg[2:]))
+            await message.channel.send(embed=pf.profile(msg[2:]))
         elif msg[1].lower() == "wrs":
-            await message.channel.send(embed=ef.world_records())
+            await message.channel.send(embed=pf.world_records())
+        elif msg[1].lower() == "top":
+            await message.channel.send(embed=pf.top_x())
 
 keep_alive.keep_alive()
 client.run(token)
