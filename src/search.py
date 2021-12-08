@@ -139,26 +139,8 @@ class ResultRequest:
         else:
             return None
 
-class Result:
-    ''' A Wca Result.
-    '''
 
-    def __init__(self, event, time, solvetype, wcaid=None):
-        self.wcaid = wcaid
-        self.event = event
-        self.best = best
-        self.solvetype = solvetype
-        
-        
-    def timeformat(self, rawtime):
-        ''' Takes xxxx format and adjusts it to xx:xx.xx if necessary
-        '''
-        
-        if int(rawtime) < 5999:
-            pass
-        
-        if rawtime[-3] and int(rawtime) > 5999:
-            pass
+             
         
     
 

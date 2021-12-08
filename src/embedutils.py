@@ -15,16 +15,18 @@ def format_profile_results(results):
     for event, result in results["Single"].items():
         eventname = wu.get_event_name(event)
         if eventname:
+            s = wu.Result(event, result[0], "Single")
             try:
+                a = wu.Result(event, results["Average"][event][0], "Average")
                 values.append([
                     eventname,
-                    result[0],
-                    results["Average"][event][0]               
+                    s.best,
+                    a.best      
                 ])
             except:
                 values.append([
                     eventname,
-                    result[0],
+                    s.best,
                     "-"
                 ])
     

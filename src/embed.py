@@ -24,15 +24,13 @@ def embed_result(ResultRequest, ranktype):
         wcaid, best, rank = results
         
     else:
-        return embed_errors(f"Likely cause: The inputted region ({ResultRequest.region}) does not have result corresponding to your query")
-    
-        
+        return embed_errors(f"Likely cause: The inputted region ({ResultRequest.region}) does not have result corresponding to your query") 
         
     WcaPerson = sf.WcaPerson(wcaid)
     solvetype = ResultRequest.solvetype
     rank = rank if rank != "1" else ""
-    time = best # Format this
     event = wu.get_event_name(ResultRequest.eventid)
+    time = wu.Result(event, best, solvetype).best 
     
     
     embed = create_person_embed_header(WcaPerson)

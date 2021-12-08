@@ -144,3 +144,49 @@ def get_wcaid_from_name(name):
     
     else: 
         return None
+    
+class Result:
+    ''' A Wca Result.
+    '''
+
+    def __init__(self, event, best, solvetype):
+        self.event = event
+        self.best = best
+        self.solvetype = solvetype
+        
+        
+        if self.event == "333fm":
+            if self.solvetype == "Average":
+                self.best = self.best[:-2] + "." + self.best[-2:]
+        elif self.event == "333mbf":
+            self.mbldformat()
+        else:
+            self.timeformat()
+            
+    def timeformat(self):
+        rawtime = self.best
+        if int(rawtime) < 5999:
+            self.best = rawtime[:-2] + "." + rawtime[-2:]
+        else:
+            cs = rawtime[-2:]
+            s = int(int(''.join(rawtime[:-2])) % 60)
+            if s < 10:
+                s = f"0{s}"
+            m = int((int(rawtime) - int(cs) - int(s) * 100) / 6000)
+            self.best = f"{m}:{s}.{cs}"
+            
+    def mbldformat(self):
+        n = self.best
+        difference = 99 - int(''.join(n[:2]))
+        time = int(''.join(n[2:7]))
+        s = time % 60
+        s = f"0{(time - s) / 60}" if s < 10 else s
+        m = int((time - s) / 60)
+        time = f"{m}:{s}"
+        
+        missed = int(''.join(n[7:9]))
+        solved = difference + missed
+        attempted = solved + missed
+        
+        self.best =  f"{solved}/{attempted} {time}"
+    

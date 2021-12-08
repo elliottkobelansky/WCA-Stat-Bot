@@ -73,8 +73,10 @@ def profile(msg):
         if wcaid:
             return ef.embed_profile(sf.WcaPerson(wcaid))
         else:
-            return ef.embed_errors("No WCA profile corresponds to the name that was enterred.")
+            return ef.embed_errors("No WCA profile corresponds to the name that was entered.")
     
-        
+    
+def unknown_command():
+    return ef.embed_errors("Unknown command") 
 
 
