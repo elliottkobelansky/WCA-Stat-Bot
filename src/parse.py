@@ -48,7 +48,13 @@ def best_from_rank(msg):
     try: 
         eventid = wu.get_eventid(msg[-1]) 
     except:
-        errors.append("Please enter a valid event")       
+        errors.append("Please enter a valid event") 
+        
+    try: 
+        if eventid == "333mbf" and solvetype == "Average":
+            errors.append("MBLD averages do not exist (yet?)")
+    except:
+        pass      
 
     if errors:
         return ef.embed_errors("\n".join(errors))
@@ -62,7 +68,7 @@ def profile(msg):
     ''' 
     
     if wu.is_wca_id_form(msg[0]):
-        wcaid = uf.get_wcaid(msg[0])
+        wcaid = wu.get_wcaid(msg[0])
         if wcaid:
             return ef.embed_profile(sf.WcaPerson(wcaid))
         else:
@@ -76,7 +82,7 @@ def profile(msg):
             return ef.embed_errors("No WCA profile corresponds to the name that was entered.")
     
     
-def unknown_command():
-    return ef.embed_errors("Unknown command") 
+def unknown_command(x):
+    return ef.embed_errors(f"Unknown command \"{x}\"") 
 
 

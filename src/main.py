@@ -36,7 +36,7 @@ async def on_message(message):
         elif msg[1].lower() == "top":
             await message.channel.send(embed=pf.top_x())
         else:
-            await message.channel.send(embed=pf.unknown_command())
+            await message.channel.send(embed=pf.unknown_command(msg[1]))
 
 keep_alive.keep_alive()
 client.run(token)

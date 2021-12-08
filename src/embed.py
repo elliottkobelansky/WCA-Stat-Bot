@@ -29,7 +29,8 @@ def embed_result(ResultRequest, ranktype):
     WcaPerson = sf.WcaPerson(wcaid)
     solvetype = ResultRequest.solvetype
     rank = rank if rank != "1" else ""
-    event = wu.get_event_name(ResultRequest.eventid)
+    eventid = ResultRequest.eventid
+    event = wu.get_event_name(eventid)
     time = wu.Result(event, best, solvetype).best 
     
     
@@ -39,9 +40,9 @@ def embed_result(ResultRequest, ranktype):
         value=f"{time}"
         )
     
-    if solvetype == "ben": # Reprogram this function
-        avgtimes = wu.get_avg_times(ResultRequest)
-        embed.set_footer(text=avgtimes)
+    if solvetype == "Average":
+        avgtimes = WcaPerson.get_avgtimes(eventid)
+        embed.set_footer(text=f"Times: {', '.join(avgtimes)}")
         
     return embed
     

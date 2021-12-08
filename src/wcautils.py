@@ -41,11 +41,14 @@ def get_wcaid(wcaid):
     ''' Gets a wcaid if it is in the WCA db. If not, returns None.
     '''
     
-    potential_id = potential_id.upper()
-    db.query("Select id from Persons where id=?", [wcaid])
+    wcaid = wcaid.upper()
+    db.execute("Select id from Persons where id=?", [wcaid])
     # This will either be None or a valid ID
-    wcaid = db.fetchone()[0]
-    return(wcaid)
+    results = db.fetchone()
+    if results:
+        return results[0]
+    else:
+        return None
 
 def get_eventid(string):
     ''' Finds the eventid that best matches the string (sorta???)
@@ -145,28 +148,55 @@ def get_wcaid_from_name(name):
     else: 
         return None
     
+def formataverage(times, eventid):
+    ''' Takes in a tuple of 5 or 3 times, then returns it formatted as a list.
+    '''
+    
+    times = [x for x in times if x != "0"]
+    times = ["999999999" if x in {"-1", "-2"} else x for x in times]
+    event = get_event_name(eventid)
+    
+    if len(times) == 5:
+        min_index = times.index(min(times))
+        max_index = times.index(max(times))
+        times = [Result(event, x).best for x in times]
+        times[min_index] = f'({times[min_index]})'
+        times[max_index] = f'({times[max_index]})'
+        return [f"{x}" for x in times]
+    
+    else: 
+        return [f"{Result(event, x).best}" for x in times]
+    
+    
 class Result:
     ''' A Wca Result.
     '''
 
-    def __init__(self, event, best, solvetype):
+    def __init__(self, event, best, solvetype="Single"):
         self.event = event
         self.best = best
         self.solvetype = solvetype
         
-        
-        if self.event == "333fm":
+        if self.event == "FMC":
+            if self.solvetype == "Single":
+                pass
             if self.solvetype == "Average":
                 self.best = self.best[:-2] + "." + self.best[-2:]
-        elif self.event == "333mbf":
+        elif self.event == "MBLD":
             self.mbldformat()
         else:
-            self.timeformat()
+            if best == "999999999":
+                self.best = "DNF"
+            else:
+                self.timeformat()
             
     def timeformat(self):
         rawtime = self.best
         if int(rawtime) < 5999:
-            self.best = rawtime[:-2] + "." + rawtime[-2:]
+            if int(rawtime) < 100:
+                self.best = f"0.{rawtime}"
+            else:    
+                self.best = rawtime[:-2] + "." + rawtime[-2:]
         else:
             cs = rawtime[-2:]
             s = int(int(''.join(rawtime[:-2])) % 60)

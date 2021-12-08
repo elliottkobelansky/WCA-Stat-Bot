@@ -65,6 +65,43 @@ class WcaPerson:
                 fresults[solvetype].update({event: [time, wr, cr, nr]})
             fresults[solvetype].pop(None, None)
         return fresults
+    
+    def get_pr(self, eventid, solvetype):
+        ''' Gets a persons PR Average 
+        '''
+        
+        db.execute(
+                   f'''Select best from Ranks{solvetype} where eventId=?
+                       and PersonId=?''', [eventid, self.wcaid]
+                   )
+        praverage = db.fetchone()
+        if praverage:
+            return praverage[0]
+        else:
+            return None
+    
+    def get_avgtimes(self, eventid):
+        ''' Gets all 5 or 3 solves of a person's PR average, as a tuple
+        '''
+        
+        pr = self.get_pr(eventid, "Average")
+        db.execute(
+            f'''Select value1, value2, value3, value4, value5 from Results
+                where eventId=? and personId=? and average=?''',
+                [eventid, self.wcaid, pr]
+        )
+        searchresults = db.fetchone()
+        if searchresults:
+            return wu.formataverage(searchresults, eventid)
+        else:
+            return None
+        
+        
+        
+        
+        
+        
+        
             
                         
 class Region:
@@ -139,8 +176,6 @@ class ResultRequest:
         else:
             return None
 
-
-             
         
     
 
