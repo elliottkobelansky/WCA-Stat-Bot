@@ -7,7 +7,6 @@ import wcautils as wu
 import re
 
 
-
 def best_from_rank(msg):
     # Message comes in in the form ["wr", "5", "s", "333bf" ]
     # Or, (Continental) ["ocr", "3", "a", "333"]
@@ -15,6 +14,9 @@ def best_from_rank(msg):
     
     errors = []
     
+    if len(msg) < 4:
+        return ef.embed_errors("Wrong number of arguments") 
+     
     if wu.is_valid_ranktype(msg[0]):
         ranktype = msg[0].upper()
         

@@ -7,6 +7,7 @@ import re
 con = sqlite3.connect("WCA.db")
 db = con.cursor()
 
+
 EVENTSDICT = {
     "222": "2x2",
     "333": "3x3",
@@ -177,12 +178,12 @@ class Result:
         self.best = best
         self.solvetype = solvetype
         
-        if self.event == "FMC":
+        if self.event in {"FMC", "333fm"}:
             if self.solvetype == "Single":
                 pass
             if self.solvetype == "Average":
                 self.best = self.best[:-2] + "." + self.best[-2:]
-        elif self.event == "MBLD":
+        elif self.event in {"MBLD", "333mbf"}:
             self.mbldformat()
         else:
             if best == "999999999":

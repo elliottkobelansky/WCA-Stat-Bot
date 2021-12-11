@@ -1,6 +1,7 @@
 import discord
 import parse as pf
 import keep_alive
+from importlib import reload
 
 
 with open('token.txt') as f:
@@ -9,14 +10,12 @@ with open('token.txt') as f:
 
 client = discord.Client()
 
-
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Activity(
                                  type=discord.ActivityType.listening,
                                  name='!wca'))
     print('We have loggen in as {0.user}'.format(client))
-
 
 @client.event
 async def on_message(message):
@@ -40,3 +39,4 @@ async def on_message(message):
 
 keep_alive.keep_alive()
 client.run(token)
+

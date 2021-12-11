@@ -7,6 +7,7 @@ import wcautils as wu
 con = sqlite3.connect("WCA.db")
 db = con.cursor()
 
+
 class WcaPerson:
     ''' A person in the WCA database.
     '''
@@ -95,13 +96,7 @@ class WcaPerson:
             return wu.formataverage(searchresults, eventid)
         else:
             return None
-        
-        
-        
-        
-        
-        
-        
+         
             
                         
 class Region:
