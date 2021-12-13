@@ -211,8 +211,8 @@ class Result:
         difference = 99 - int(''.join(n[:2]))
         time = int(''.join(n[2:7]))
         s = time % 60
-        s = f"0{(time - s) / 60}" if s < 10 else s
         m = int((time - s) / 60)
+        s = f"0{s}" if s < 10 else s
         time = f"{m}:{s}"
         
         missed = int(''.join(n[7:9]))
