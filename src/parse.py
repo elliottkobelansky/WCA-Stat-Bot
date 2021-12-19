@@ -83,7 +83,11 @@ def profile(msg):
         else:
             return ef.embed_errors("No WCA profile corresponds to the name that was entered.")
     
-    
+def wcahelp():
+    ''' Returns help message embed. // TODO: Specific help messages
+    '''
+    return ef.embed_help()
+ 
 def unknown_command(x):
     return ef.embed_errors(f"Unknown command \"{x}\"") 
 

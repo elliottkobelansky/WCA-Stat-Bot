@@ -66,6 +66,28 @@ def embed_errors(string):
     embed = discord.Embed(title="Error", color=discord.Color.red(), 
                           description=("```\n" + string + "\n\nUse \"!wca help\" for help```"))
     return embed
+
+def embed_help():
+    helpmessage = [
+        "Commands:\n",
+        "wr/nar/ocr/... [rank] [single/average] [event]",
+        "nr [rank] [single/average] [country] [event]",
+        "profile [name]\n\n",
+        "Events:",
+        "nxn: n (3x3 = 3)",
+        "OH: oh",
+        "nBLD: nbf (3bld = 3bf)",
+        "FMC: fm",
+        "Megaminx: minx",
+        "Pyra: py"
+        "Square-1: sq1",
+        "Anything else: leave as is (skewb = skewb)"
+    ]
+    helpmessage = "\n -> ".join(helpmessage) 
     
+    
+    embed = discord.Embed(title="Help", color=discord.Color.green(),
+                          description="```\n" + helpmessage + "```") 
+    return embed
     
         
