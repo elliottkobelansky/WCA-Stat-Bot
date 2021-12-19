@@ -153,8 +153,8 @@ def formataverage(times, eventid):
     ''' Takes in a tuple of 5 or 3 times, then returns it formatted as a list.
     '''
     
-    times = [x for x in times if x != "0"]
-    times = ["999999999" if x in {"-1", "-2"} else x for x in times]
+    times = [int(x) for x in times if x != "0"]
+    times = [999999999 if x in {"-1", "-2"} else int(x) for x in times]
     event = get_event_name(eventid)
     
     if len(times) == 5:
@@ -175,7 +175,7 @@ class Result:
 
     def __init__(self, event, best, solvetype="Single"):
         self.event = event
-        self.best = best
+        self.best = str(best)
         self.solvetype = solvetype
         
         if self.event in {"FMC", "333fm"}:
@@ -211,8 +211,8 @@ class Result:
         difference = 99 - int(''.join(n[:2]))
         time = int(''.join(n[2:7]))
         s = time % 60
-        s = f"0{(time - s) / 60}" if s < 10 else s
         m = int((time - s) / 60)
+        s = f"0{s}" if s < 10 else s
         time = f"{m}:{s}"
         
         missed = int(''.join(n[7:9]))
