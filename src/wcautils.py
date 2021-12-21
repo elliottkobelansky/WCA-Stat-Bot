@@ -154,16 +154,16 @@ def formataverage(times, eventid):
     '''
     
     times = [int(x) for x in times if x != "0"]
-    times = [999999999 if x in {"-1", "-2"} else int(x) for x in times]
+    times = [999999999 if x in {-1, -2} else int(x) for x in times]
     event = get_event_name(eventid)
     
     if len(times) == 5:
         min_index = times.index(min(times))
         max_index = times.index(max(times))
-        times = [Result(event, x).best for x in times]
+        times = [Result(event, str(x)).best for x in times]
         times[min_index] = f'({times[min_index]})'
         times[max_index] = f'({times[max_index]})'
-        return [f"{x}" for x in times]
+        return [str(x) for x in times]
     
     else: 
         return [f"{Result(event, x).best}" for x in times]
