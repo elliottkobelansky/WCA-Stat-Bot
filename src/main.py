@@ -1,7 +1,6 @@
 import discord
 import parse as pf
 import keep_alive
-from importlib import reload
 
 
 with open('token.txt') as f:
